@@ -1,25 +1,26 @@
-var express = require("express");
-//var logger = require("morgan");
-var mongoose = require("mongoose");
+const express = require("express");
+const mongoose = require("mongoose");
+const hbs = require("express-handlebars");
+
 
 // Our scraping tools
 // Axios is a promised-based http library, similar to jQuery's Ajax method
 // It works on the client and on the server
-var axios = require("axios");
-var cheerio = require("cheerio");
+const axios = require("axios");
+const cheerio = require("cheerio");
 
 // Require all models
-var db = require("./models");
+const db = require("./models");
 
-var PORT = 3000;
+const PORT = 3000;
 
 // Initialize Express
-var app = express();
+const app = express();
 
-// Configure middleware
+// Configure hanlebar engine
+app.engine('handlebars', hbs())
+app.set('view engine', 'handlebars');
 
-// Use morgan logger for logging requests
-//app.use(logger("dev"));
 // Parse request body as JSON
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -30,13 +31,13 @@ app.use(express.static("public"));
 mongoose.connect("mongodb://localhost/newsItem", { useNewUrlParser: true });
 
 // Routes
-
+app.get("/", (req,res) => res.render('home'));
 // A GET route for scraping the echoJS website
 app.get("/scrape", function(req, res) {
   // First, we grab the body of the html with axios
   axios.get("https://news.google.com/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRFZxYUdjU0FtVnVHZ0pWVXlnQVAB?hl=en-US&gl=US&ceid=US%3Aen").then(function(response) {
     // Then, we load that into cheerio and save it to $ for a shorthand selector
-    var $ = cheerio.load(response.data);
+    const $ = cheerio.load(response.data);
 
     // Now, we grab every h2 within an article tag, and do the following:
     $("article.MQsxIb.xTewfe.R7GTQ.keNKEd.j7vNaf.Cc0Z5d.EjqUne").each(function(i, element) {
@@ -89,8 +90,7 @@ app.get("/articles/:id", function(req, res) {
 
 // Route for saving/updating an Article's associated Note
 app.post("/articles/:id", function(req, res) {
-  let newNote = req.body;
-  console.log(newNote);
+  const newNote = req.body;
   db.Note.create(newNote)
     .then((dbNewNote)=>{
       console.log(dbNewNote);
