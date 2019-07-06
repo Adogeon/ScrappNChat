@@ -40,8 +40,8 @@ app.get("/scrape", function(req, res) {
 
     // Now, we grab every h2 within an article tag, and do the following:
     $("article.MQsxIb.xTewfe.R7GTQ.keNKEd.j7vNaf.Cc0Z5d.EjqUne").each(function(i, element) {
-      // Save an empty result object
-
+      
+      //Append original path to link
       let link = $(this).children("a").attr("href");
       link  = "news.google.com" + link.substring(1);
 
@@ -76,26 +76,33 @@ app.get("/scrape", function(req, res) {
 
 // Route for getting all Articles from the db
 app.get("/articles", function(req, res) {
-  // TODO: Finish the route so it grabs all of the articles
   db.Article.find({}).then((articles) => res.json(articles))
 });
 
 // Route for grabbing a specific Article by id, populate it with it's note
 app.get("/articles/:id", function(req, res) {
-  // TODO
-  // ====
-  // Finish the route so it finds one article using the req.params.id,
-  // and run the populate method with "note",
-  // then responds with the article with the note included
+  db.Article
+    .findById(req.params.id) 
+    .populate('note')
+    .then((result) => res.json(result))
 });
 
 // Route for saving/updating an Article's associated Note
 app.post("/articles/:id", function(req, res) {
-  // TODO
-  // ====
-  // save the new note that gets posted to the Notes collection
-  // then find an article from the req.params.id
-  // and update it's "note" property with the _id of the new note
+  let newNote = req.body;
+  console.log(newNote);
+  db.Note.create(newNote)
+    .then((dbNewNote)=>{
+      console.log(dbNewNote);
+      db.Article
+       .findByIdAndUpdate(
+         req.params.id,
+         { $push: {note: dbNewNote._id}},
+         {new: true}
+       )
+       .then(result=>console.log(result))
+       .catch( err => console.log(err));
+    })
 });
 
 // Start the server
